@@ -1,4 +1,29 @@
+using System.Net;
+using Monday.WebApi;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
+
+#if Linux
+builder.Host.UseSystemd();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.KnownProxies.Add(IPAddress.Parse("20.234.69.131"));
+});
+
+#endif
+#if Windows
+builder.Host.UseWindowsService(options =>
+{
+    options.ServiceName = ServiceConstants.ServiceName;
+});
+#endif
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.KnownProxies.Add(IPAddress.Parse("20.234.69.131"));
+});
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
