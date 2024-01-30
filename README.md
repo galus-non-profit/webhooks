@@ -17,7 +17,8 @@ builder.Host.UseSystemd();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.KnownProxies.Add(IPAddress.Parse("20.234.69.131"));
+    options.KnownProxies.Add(IPAddress.Parse("your_ip_machine"));
+    // TODO move it to some settings
 });
 
 #endif
@@ -59,13 +60,39 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 ```
 
 - download few missed packages:
-```Microsoft.Extensions.Hosting.WindowsServices```
+```
+Microsoft.Extensions.Hosting.WindowsServices
+Microsoft.Extensions.Hosting.Systemd
+```
+
 
 - save changes, push code to repository and log in to remote machine. 
 
 ## On your remote machine
 
-### 1. Download source code from git
+### 1. Install .NET sdk and runtime
+Installing .NET may differ, in ubuntu 20.04 install .net with this [tutorial](https://learn.microsoft.com/en-us/dotnet/core/install/linux-ubuntu-2004)
+
+use following commands:
+
+```bash
+wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+
+sudo dpkg -i packages-microsoft-prod.deb
+
+rm packages-microsoft-prod.deb
+
+sudo apt-get update && \
+  sudo apt-get install -y dotnet-sdk-8.0
+
+sudo apt-get update && \
+  sudo apt-get install -y aspnetcore-runtime-8.0
+```
+
+- after installation use "dotnet -h" to check if dotnet cli works
+
+
+### 2. Download source code from git
 
 - make folder to store your source code ex: /home/monday, then clone repository, switch to branch where branch (for this repo branch's name is: bonus-deploy-dotnet-app-as-linux-service)
 
@@ -76,7 +103,26 @@ git clone https://github.com/galus-non-profit/webhooks.git # or use SSH
 git checkout "bonus-deploy-dotnet-app-as-linux-service"
 ```
 
-### 2. Publish code as service 
+- to check if your app can work in actual machine setup and your code works on linux try tu run app
+
+```bash
+# in src project file
+dotnet run --project WebApi/Monday.WebApi.csproj --urls "http://localhost:5082"
+```
+if everything works fine, you should see standard dotnet logs:
+
+```log
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5082
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /home/mondayapi/webhooks/src/WebApi
+```
+
+### 3. Publish code as service 
 
 - go to src folder and publish it next to webhook service in /opt directory:
 
@@ -85,7 +131,7 @@ mkdir /opt/mondayapi
 dotnet publish -o /opt/mondayapi/
 ```
 
-### 3. Configure service 
+### 4. Configure service 
 
 - in same location with published files create service file named mondayapi.service with following content:
 
@@ -98,7 +144,7 @@ After=network.target
 Type=simple
 User=root
 Group=root
-ExecStart=/usr/bin/dotnet /opt/mondayapi/Monday.WebApi.dll # path to main dll
+ExecStart=/usr/bin/dotnet /opt/mondayapi/Monday.WebApi.dll # path to dotnet binary and  main project dll
 WorkingDirectory=/opt/mondayapi # dir with published files
 KillMode=process
 Restart=on-failure
@@ -108,6 +154,9 @@ Environment=ASPNETCORE_URLS=http://127.0.0.1:5082 # specify port - remember that
 [Install]
 WantedBy=multi-user.target
 ```
+> [!CAUTION]
+> remove all comments in file above, comments will corrupt service configuration
+
 - as it was before link service file:
 
 ```bash
@@ -117,15 +166,29 @@ ln -s /opt/mondayapi/mondayapi.service  /etc/systemd/system/mondayapi.service
 - if everything is correct you should can run service
 
 ```bash
+systemctl enable mondayapi.service
 systemctl start mondayapi.service
 ```
-
- and can access weather api endpoint on local port 5082, to check it run:
+to verify service status use command:
 
 ```bash
-curl http://localhost:5082/weatherforecast
+systemctl status mondayapi.service
+```
+Status of working service looks like this:
+
+![Alt text](/assets/service-status.png)
+
+ and access weather api endpoint on local port 5082, to check it run:
+
+```bash
+curl http://127.0.0.1:5082/weatherforecast
 ```
 in response you should see json with weather
+
+- to read service logs use:
+```bash
+journalctl -u mondayapi -r
+```
 
 ### 3. Expose api by reverse proxy
 

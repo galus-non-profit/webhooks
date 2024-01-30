@@ -9,7 +9,7 @@ builder.Host.UseSystemd();
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.KnownProxies.Add(IPAddress.Parse("20.234.69.131"));
+    options.KnownProxies.Add(IPAddress.Parse("4.231.248.233"));
 });
 
 #endif
@@ -22,7 +22,7 @@ builder.Host.UseWindowsService(options =>
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.KnownProxies.Add(IPAddress.Parse("20.234.69.131"));
+    options.KnownProxies.Add(IPAddress.Parse("4.231.248.233"));
 });
 
 // Add services to the container.
