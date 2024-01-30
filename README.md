@@ -244,7 +244,7 @@ After=network.target
 Type=simple
 User=root
 Group=root
-ExecStart=/opt/webhook/webhook -hooks=/opt/webhook/hooks.json -hotreload=false -ip= -port=5090 -secure=false -verbose=true -debug=false
+ExecStart=/opt/webhook/webhook -hooks=/opt/webhook/hooks.json -hotreload=false -ip=127.0.0.1 -port=5090 -secure=false -verbose=true -debug=false
 # exec start: binary located in /opt/webhook/webhook file will actions from hooks.json file: execute command from /home/webhook/redeploy when receive request on 5090 port
 WorkingDirectory=/opt/webhook
 KillMode=process
@@ -333,3 +333,14 @@ Then check if webhook works. In your local machine paste address:
 remote_machine_ip:5090/hooks/
 ```
 Response should be string "OK" and redeploy script should run on remote machine. 
+
+
+### 6. Add webhook to dockerhub
+
+Go to dockerhub, click on monday image and select webhooks tab:
+
+![Alt text](/assets/webhooks.png)
+
+then create webhook by adding its url and name
+
+After pushing new image version, dockerhub will send request and run redeploy script.
