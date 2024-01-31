@@ -540,11 +540,11 @@ journalctl -u mondayapi -r
 
 ### 2.6 Expose api by reverse proxy
 
-- edit /etc/nginx/sites-available/default file by adding new location:
+- edit /etc/nginx/sites-available/default file by changing port from 5080 (app running in docker) to 5082 to expose app running as systemd service:
 
 ```nginx
-location /mondayapi {
-        proxy_pass http://127.0.0.1:5082;
+location / {
+        proxy_pass http://127.0.0.1:5080;
         proxy_redirect off;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -557,7 +557,6 @@ location /mondayapi {
         proxy_set_header X-Forwarded-Host $server_name;
     }
 ```
-
 - restart nginx service:
 
 ```bash
@@ -567,6 +566,17 @@ systemctl restart nginx.service
 
 ```
 https://{server_address}/mondayapi/weatherforecast
+```
+
+There is few way to expose both applications basic and not so wise approach with different location in nginx config is shown [here](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-8.0) 
+
+after configure app to being serve on different url base, we would need nginx config file like this:
+
+```nginx
+location /monday {
+        proxy_pass http://127.0.0.1:5080;
+        # rest of configuration
+    }
 ```
 
 #  3. Deploy .NET web api as windows service
