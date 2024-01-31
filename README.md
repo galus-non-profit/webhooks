@@ -663,3 +663,82 @@ To change user account go, to windows service panel, right click on MondayApi se
 After hit https://localhost:5081/ you should see swagger page:
 
 ![Alt text](/assets/swagger.png)
+
+#  4. Add custom domain
+
+## Required resources and apps
+
+you need to bue domain somewhere in this section i have used seohost.pl provider
+
+### 4.1 Add DNS records in domain panel
+
+In your provider admin panel go to "Domains" tab. In setting section find DNS settings and choose IP redirect by adding ip of tour machine. 
+tab names, settings and more may vary depending on the provider's panel. Sometimes you need to set so-called DNS records, other panels offer a more gui approach.
+It can take some time after changes will be applied. 
+
+![Alt text](/assets/dns.png)
+
+to check if it works you can ping your domain in console, after some time it will show your machine ip.
+
+### 4.2 Add ssl certificate
+
+#### Install Certbot
+
+- update apt get
+
+```bash
+apt-get update 
+```
+then install packages:
+
+```bash
+apt-get install python3 python3-venv libaugeas0
+```
+
+setup virtual envs:
+```bash
+python3 -m venv /opt/certbot/
+/opt/certbot/bin/pip install --upgrade pip
+```
+
+install certbot:
+```bash
+/opt/certbot/bin/pip install certbot certbot-apache
+/opt/certbot/bin/pip install certbot certbot-nginx
+```
+then link files:
+```bash
+ln -s /opt/certbot/bin/certbot /usr/bin/certbot
+```
+
+#### Create an SSL Certificate with Certbot
+
+```bash
+certbot --nginx
+```
+all steps are taken from this [tutorial](https://www.inmotionhosting.com/support/website/ssl/lets-encrypt-ssl-ubuntu-with-certbot/)
+
+
+console will prompt you to pass email and few consents, after that it will generate and deploy certificate.
+![Alt text](/assets/certbot.png)
+
+From this moment you can enjoy new secured connection on your domain. Paste https://your_domain/weatherforecast to browser. It should return weather json and display padlock in address tab. 
+
+### 4.3 Set automatic certificate renew 
+
+Time to set automatic renew certificate by cron job that are part of linux system:
+
+in /etc/cron.weekly (there is a lot directories cron.daily, cron.monthly and so on, that contains scripts that will be run with selected frequency)
+create file certbot.sh with following content:
+
+```bash
+#!/bin/sh
+/usr/bin/certbot renew > /dev/null 2>&1
+systemctl restart nginx
+```
+
+and change file mod to make it executable
+
+```bash
+chmod +x certbot.sh
+```
